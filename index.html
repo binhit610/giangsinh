@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Christmas Scene</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas class="webgl"></canvas>
+
+  <!-- Shaders -->
+  <script id="vertexshaderCandle" type="x-shader/x-vertex">
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+    }
+  </script>
+
+  <script id="fragmentshaderCandle" type="x-shader/x-fragment">
+    uniform float time;
+    uniform float delay;
+    uniform float colorSpeed;
+    uniform vec3 baseColor;
+    uniform vec3 finalColor;
+    varying vec2 vUv;
+    void main() {
+      vec3 color = mix(baseColor, finalColor, sin(time*colorSpeed + delay));
+      gl_FragColor = vec4(color,1.0);
+    }
+  </script>
+
+  <!-- Link JS tách riêng -->
+  <script src="script.js" type="module"></script>
+
+<body>
+  <canvas class="webgl"></canvas>
+  <script type="module" src="./main.js"></script>
+</body>
+
+</html>
