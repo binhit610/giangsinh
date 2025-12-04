@@ -1,42 +1,52 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Christmas Scene</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <canvas class="webgl"></canvas>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hộp Quà 3D</title>
+    <link rel="stylesheet" href="./style/style.css" />
+  </head>
 
-  <!-- Shaders -->
-  <script id="vertexshaderCandle" type="x-shader/x-vertex">
-    varying vec2 vUv;
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-    }
-  </script>
+  <body>
+    <!-- NHẠC -->
+    <audio id="bgm" src="./style/chrismats.mp3.mp3" loop></audio>
 
-  <script id="fragmentshaderCandle" type="x-shader/x-fragment">
-    uniform float time;
-    uniform float delay;
-    uniform float colorSpeed;
-    uniform vec3 baseColor;
-    uniform vec3 finalColor;
-    varying vec2 vUv;
-    void main() {
-      vec3 color = mix(baseColor, finalColor, sin(time*colorSpeed + delay));
-      gl_FragColor = vec4(color,1.0);
-    }
-  </script>
+    <canvas class="webgl"></canvas>
 
-  <!-- Link JS tách riêng -->
-  <script src="script.js" type="module"></script>
+    <!-- SHADER -->
+    <script type="x-shader/x-vertex" id="vertexshaderCandle">
+      void main() {
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    </script>
 
-<body>
-  <canvas class="webgl"></canvas>
-  <script type="module" src="./main.js"></script>
-</body>
+    <script type="x-shader/x-fragment" id="fragmentshaderCandle">
+      uniform float time; 
+      uniform float colorSpeed;
+      uniform float delay; 
+      uniform vec3 baseColor;
+      uniform vec3 finalColor;
+      varying vec2 vUv;
 
+      void main() {
+        float animatedTime = time - delay;
+        animatedTime = mod(animatedTime, colorSpeed);
+        float mixFactor = animatedTime / colorSpeed;
+
+        vec3 mixedColor = mix(baseColor, finalColor, mixFactor);
+        gl_FragColor = vec4(mixedColor, 1.0);
+      }
+    </script>
+
+    <!-- MODULE 3D -->
+    <script type="module" src="./style/module.js"></script>
+
+    <!-- CLICK LÀ PHÁT NHẠC -->
+    <script>
+      document.body.addEventListener("mousedown", function () {
+        const audio = document.getElementById("bgm");
+        audio.play().catch(() => {});
+      });
+    </script>
+  </body>
 </html>
