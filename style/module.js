@@ -3,7 +3,7 @@ import { OrbitControls } from "https://esm.sh/three@0.151.3/addons/controls/Orbi
 import { OutlineEffect } from "https://esm.sh/three@0.151.3/addons/effects/OutlineEffect.js";
 import { GLTFLoader } from "https://esm.sh/three@0.151.3/examples/jsm/loaders/GLTFLoader.js";
 
-// ----------- SHADER PARTICLE ----------- 
+// ----------- SHADER PARTICLE -----------
 const _VS = `
 uniform float pointMultiplier;
 attribute float size;
@@ -27,7 +27,7 @@ void main() {
   gl_FragColor = texture2D(diffuseTexture, coords) * vColor;
 }`;
 
-// ----------- PARTICLE SYSTEM ----------- 
+// ----------- PARTICLE SYSTEM -----------
 function getLinearSpline(lerp){
   const points=[];
   function addPoint(t,d){ points.push([t,d]); }
@@ -127,7 +127,7 @@ function getParticleSystem(params){
   return { update };
 }
 
-// ----------- SCENE SETUP ----------- 
+// ----------- SCENE SETUP -----------
 const canvas=document.querySelector('canvas.webgl');
 const scene=new THREE.Scene();
 const gltfLoader=new GLTFLoader();
@@ -141,7 +141,7 @@ const renderer=new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
 const effect=new OutlineEffect(renderer, {defaultThickness:0.0014, defaultColor:new THREE.Color(0x202020).toArray()});
 renderer.setSize(sizes.width, sizes.height);
 
-// ----------- MATERIALS ----------- 
+// ----------- MATERIALS -----------
 const bakedTexture = textureLoader.load('https://rawcdn.githack.com/ricardoolivaalonso/threejs-journey01/e3cfc35a8270972a21435ad885da2bab54ec2d11/baked.jpg');
 bakedTexture.flipY=false;
 const bakedMaterial = new THREE.MeshStandardMaterial({map:bakedTexture, side:THREE.DoubleSide, roughness:0.5});
@@ -161,96 +161,92 @@ const neonMaterial2 = new THREE.ShaderMaterial({
 const fireMaterial = new THREE.MeshPhongMaterial({color:0xffdab9, side:THREE.DoubleSide});
 fireMaterial.userData.outlineParameters={thickness:0};
 
-// ----------- FIRE EMITTER ----------- 
+// ----------- FIRE EMITTER -----------
 const cube = new THREE.Mesh(new THREE.BoxGeometry(1,.01,.5), new THREE.MeshStandardMaterial({color:0xffffff}));
 cube.position.set(0.1,-2.2,-1.6);
 scene.add(cube);
 const fireEffect = getParticleSystem({camera, emitter:cube, parent:scene, rate:200, texture:'https://rawcdn.githack.com/ricardoolivaalonso/threejs-journey01/e3cfc35a8270972a21435ad885da2bab54ec2d11/fire.png'});
 
-let treeSmall, treeBig;
+// ----------- TREE NHỎ -----------
+let tree;
+gltfLoader.load('./models/christmas_tree.glb', (gltf)=>{
+  tree = gltf.scene;
+  scene.add(tree);
+  const scale = 1.5;
+  tree.scale.set(scale, scale, scale);
+  const box = new THREE.Box3().setFromObject(tree);
+  const minY = box.min.y;
+  tree.position.y += -2.2 - minY;
+  tree.position.x = 2;
+  tree.position.z = -1;
 
-const treeModels = [
-  { scale: 1.5, pos: new THREE.Vector3(2, -2.2, -1), rate: 80 },   // cây nhỏ bên phải
-  { scale: 3, pos: new THREE.Vector3(-2, -2.2, -1), rate: 150 }    // cây bự bên trái
-];
-
-treeModels.forEach((t, i) => {
-  gltfLoader.load('./models/christmas_tree.glb', (gltf) => {
-    const obj = gltf.scene;
-    scene.add(obj);
-    obj.scale.set(t.scale, t.scale, t.scale);
-
-    const box = new THREE.Box3().setFromObject(obj);
-    const minY = box.min.y;
-    obj.position.y += t.pos.y - minY;
-    obj.position.x = t.pos.x;
-    obj.position.z = t.pos.z;
-
-    // particle emitter đặt gần tán cây
-    const lightEmitter = new THREE.Object3D();
-    lightEmitter.position.y = box.max.y * 0.8;
-    obj.add(lightEmitter);
-
-    obj.userData.lightsEffect = getParticleSystem({
-      camera,
-      emitter: lightEmitter,
-      parent: obj,
-      rate: t.rate,
-      texture: 'https://rawcdn.githack.com/ricardoolivaalonso/threejs-journey01/e3cfc35a8270972a21435ad885da2bab54ec2d11/fire.png'
-    });
-
-    if(i===0) treeSmall = obj;
-    else treeBig = obj;
+  const lightEmitter = new THREE.Object3D();
+  lightEmitter.position.y = 0;
+  tree.add(lightEmitter);
+  tree.userData.lightsEffect = getParticleSystem({
+    camera,
+    emitter: lightEmitter,
+    parent: tree,
+    rate: 100,
+    texture: 'https://rawcdn.githack.com/ricardoolivaalonso/threejs-journey01/e3cfc35a8270972a21435ad885da2bab54ec2d11/fire.png'
   });
 });
 
-// ---------- tick() update particle lights ----------
-function tick(){
-  requestAnimationFrame(tick);
-  const delta = clock.getDelta();
+// ----------- TREE LỚN -----------
+let bigTree;
+gltfLoader.load('./models/bigtree.glb', (gltf) => {
+  bigTree = gltf.scene;
+  scene.add(bigTree);
+  const scale = window.innerWidth < 768 ? 2.0 : 3.0;
+  bigTree.scale.set(scale, scale, scale);
+  const box = new THREE.Box3().setFromObject(bigTree);
+  const minY = box.min.y;
+  bigTree.position.y += -2.2 - minY;
+  bigTree.position.x = 0;
+  bigTree.position.z = -1.5;
+  bigTree.rotation.y = Math.PI / 8;
 
-  mixers.forEach(m=>m.update(delta));
-  neonMaterial.uniforms.time.value += 0.075;
-  neonMaterial2.uniforms.time.value += 0.09;
-  fireEffect.update(delta);
+  const lightEmitter = new THREE.Object3D();
+  lightEmitter.position.y = 0;
+  bigTree.add(lightEmitter);
+  bigTree.userData.lightsEffect = getParticleSystem({
+    camera,
+    emitter: lightEmitter,
+    parent: bigTree,
+    rate: window.innerWidth < 768 ? 80 : 150,
+    texture: 'https://rawcdn.githack.com/ricardoolivaalonso/threejs-journey01/e3cfc35a8270972a21435ad885da2bab54ec2d11/fire.png'
+  });
+});
 
-  if(treeSmall && treeSmall.userData.lightsEffect)
-    treeSmall.userData.lightsEffect.update(delta);
-  if(treeBig && treeBig.userData.lightsEffect)
-    treeBig.userData.lightsEffect.update(delta);
-
-  controls.update();
-  controls.target.clamp(minPan, maxPan);
-  renderer.render(scene, camera);
-  effect.render(scene, camera);
-}
-
-// ----------- LIGHTS & CAMERA ----------- 
+// ----------- LIGHTS & CAMERA -----------
 function getLights(){
   const amb = new THREE.AmbientLight("#ffffff",0.9); scene.add(amb);
   const dir = new THREE.DirectionalLight('#ffffff'); scene.add(dir); dir.position.set(-2,5,0); dir.intensity=0.35;
 }
 function getControls(){
-  controls.enableDamping=true; controls.enableZoom=true; controls.enablePan=false;
-  controls.minPolarAngle=Math.PI/5; controls.maxPolarAngle=Math.PI/2;
-  if(sizes.width<768){controls.minDistance=18;controls.maxDistance=35;}else{controls.minDistance=20;controls.maxDistance=47;}
+  controls.enableDamping=true; 
+  controls.enableZoom=true; 
+  controls.enablePan = window.innerWidth < 768 ? true : false;
+  controls.minPolarAngle=Math.PI/5; 
+  controls.maxPolarAngle=Math.PI/2;
+  if(sizes.width<768){controls.minDistance=15;controls.maxDistance=35;}else{controls.minDistance=20;controls.maxDistance=47;}
 }
 function getCamera(){
-  camera.fov = sizes.width<768?22:10; camera.aspect=sizes.width/sizes.height; camera.updateProjectionMatrix();
-  if(sizes.width<768){camera.position.set(15,8,25);}else{camera.position.set(35,8,36);} scene.add(camera);
+  camera.aspect = sizes.width/sizes.height;
+  if(sizes.width<768){camera.fov=35;camera.position.set(15,8,25);}
+  else{camera.fov=10;camera.position.set(35,8,36);}
+  camera.updateProjectionMatrix();
+  scene.add(camera);
 }
 
-// ----------- MODELS ----------- 
+// ----------- MODELS -----------
 let mixers = [];
 function getModels(){
-  // model chính
   gltfLoader.load('https://rawcdn.githack.com/ricardoolivaalonso/threejs-journey01/e3cfc35a8270972a21435ad885da2bab54ec2d11/model.glb', (gltf)=>{
     gltf.scene.traverse(c=>{ if(c.material) c.material=bakedMaterial; });
-    scene.add(gltf.scene);
-    gltf.scene.position.set(0,-.3,0);
+    scene.add(gltf.scene); gltf.scene.position.set(0,-.3,0);
   });
 
-  // model 2
   gltfLoader.load('https://rawcdn.githack.com/ricardoolivaalonso/threejs-journey01/e3cfc35a8270972a21435ad885da2bab54ec2d11/model2.glb', (gltf)=>{
     gltf.scene.traverse(c=>{
       if(c.material){
@@ -270,71 +266,31 @@ function getModels(){
     gltf.scene.position.set(0,-.3,0);
   });
 
- // ============ TẠO NGƯỜI TUYẾT GÓC TRÁI ============
+  // ============ NGƯỜI TUYẾT GÓC TRÁI ============
+  const snowman = new THREE.Group();
+  const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.35, 32, 32), whiteMat); body.position.set(0, 0.35, 0); snowman.add(body);
+  const mid = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 32), whiteMat); mid.position.set(0, 0.75, 0); snowman.add(mid);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 32, 32), whiteMat); head.position.set(0, 1.05, 0); snowman.add(head);
 
-// Nhóm chứa toàn bộ người tuyết
-const snowman = new THREE.Group();
+  const blackMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+  const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.02,16,16), blackMat); eye1.position.set(0.06,1.08,0.15);
+  const eye2 = new THREE.Mesh(new THREE.SphereGeometry(0.02,16,16), blackMat); eye2.position.set(-0.06,1.08,0.15);
+  snowman.add(eye1,eye2);
 
-// --- Thân dưới ---
-const bodyGeom = new THREE.SphereGeometry(0.35, 32, 32);
-const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-const body = new THREE.Mesh(bodyGeom, whiteMat);
-body.position.set(0, 0.35, 0);
-snowman.add(body);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.03,0.15,16), new THREE.MeshStandardMaterial({ color: 0xff6600 }));
+  nose.position.set(0,1.05,0.18); nose.rotation.x = Math.PI / 2; snowman.add(nose);
 
-// --- Thân giữa ---
-const midGeom = new THREE.SphereGeometry(0.25, 32, 32);
-const mid = new THREE.Mesh(midGeom, whiteMat);
-mid.position.set(0, 0.75, 0);
-snowman.add(mid);
+  const redMat = new THREE.MeshStandardMaterial({ color: 0xaa0000 });
+  const hatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,0.25,32), redMat);
+  const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,0.05,32), redMat);
+  hatTop.position.set(0,1.28,0); hatBrim.position.set(0,1.18,0); snowman.add(hatTop,hatBrim);
 
-// --- Đầu ---
-const headGeom = new THREE.SphereGeometry(0.18, 32, 32);
-const head = new THREE.Mesh(headGeom, whiteMat);
-head.position.set(0, 1.05, 0);
-snowman.add(head);
-
-// --- Mắt ---
-const eyeGeom = new THREE.SphereGeometry(0.02, 16, 16);
-const blackMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-const eye1 = new THREE.Mesh(eyeGeom, blackMat);
-const eye2 = new THREE.Mesh(eyeGeom, blackMat);
-eye1.position.set(0.06, 1.08, 0.15);
-eye2.position.set(-0.06, 1.08, 0.15);
-snowman.add(eye1, eye2);
-
-// --- Mũi (cà rốt) ---
-const noseGeom = new THREE.ConeGeometry(0.03, 0.15, 16);
-const orangeMat = new THREE.MeshStandardMaterial({ color: 0xff6600 });
-const nose = new THREE.Mesh(noseGeom, orangeMat);
-nose.position.set(0, 1.05, 0.18);
-nose.rotation.x = Math.PI / 2;
-snowman.add(nose);
-
-// --- Mũ ---
-const hatTopGeom = new THREE.CylinderGeometry(0.15, 0.15, 0.25, 32);
-const hatBrimGeom = new THREE.CylinderGeometry(0.22, 0.22, 0.05, 32);
-const redMat = new THREE.MeshStandardMaterial({ color: 0xaa0000 });
-
-const hatTop = new THREE.Mesh(hatTopGeom, redMat);
-const hatBrim = new THREE.Mesh(hatBrimGeom, redMat);
-
-hatTop.position.set(0, 1.28, 0);
-hatBrim.position.set(0, 1.18, 0);
-
-snowman.add(hatTop, hatBrim);
-
-// --- Vị trí tổng thể (góc trái) ---
-snowman.position.set(-1.5, -0.3, 0);  // << CHỈNH Ở ĐÂY ĐỂ ĐẶT VỊ TRÍ
-snowman.scale.set(0.9, 0.9, 0.9);      // vừa kích thước không che gấu
-
-// Thêm vào scene
-scene.add(snowman);
-
+  snowman.position.set(-1.5,-0.3,0); snowman.scale.set(0.9,0.9,0.9);
+  scene.add(snowman);
 }
 
-
-// ----------- ANIMATION LOOP ----------- 
+// ----------- ANIMATION LOOP -----------
 function tick(){
   requestAnimationFrame(tick);
   const delta = clock.getDelta();
@@ -343,13 +299,14 @@ function tick(){
   neonMaterial2.uniforms.time.value += 0.09;
   fireEffect.update(0.016);
   if(tree && tree.userData.lightsEffect) tree.userData.lightsEffect.update(0.016);
+  if(bigTree && bigTree.userData.lightsEffect) bigTree.userData.lightsEffect.update(0.016);
   controls.update();
   controls.target.clamp(minPan, maxPan);
   renderer.render(scene, camera);
   effect.render(scene, camera);
 }
 
-// ----------- WINDOW RESIZE ----------- 
+// ----------- WINDOW RESIZE -----------
 window.addEventListener('resize', ()=>{
   sizes.width=window.innerWidth; sizes.height=window.innerHeight;
   camera.aspect = sizes.width/sizes.height; camera.updateProjectionMatrix();
@@ -358,5 +315,5 @@ window.addEventListener('resize', ()=>{
   getControls(); getCamera();
 });
 
-// ----------- INIT ----------- 
+// ----------- INIT -----------
 getModels(); getLights(); getControls(); getCamera(); tick();
